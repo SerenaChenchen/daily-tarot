@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日塔羅 · 星語占卜</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0D0B1E;
+    --bg2: #13102A;
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --rose: #8B5A7A;
+    --rose-light: #B07899;
+    --star: #E8E4F0;
+    --muted: #9890B8;
+    --card-bg: #1A1535;
+    --card-border: rgba(201,168,76,0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--star);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield */
+  #stars-canvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    padding: 32px 24px 16px;
+    text-align: center;
+  }
+  .logo {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(22px, 5vw, 32px);
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(201,168,76,0.4);
+  }
+  .logo-sub {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 560px;
+    padding: 0 20px 48px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .section-desc {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  /* ── THEME GRID ── */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .theme-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .theme-btn:hover::before, .theme-btn.selected::before { opacity: 1; }
+  .theme-btn:hover, .theme-btn.selected {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.15);
+  }
+  .theme-btn.selected { border-color: var(--gold-light); }
+  .theme-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+  .theme-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--star);
+  }
+  .theme-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .theme-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* ── INPUT ── */
+  .question-wrap {
+    width: 100%;
+    margin: 20px 0;
+  }
+  .question-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .question-input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--star);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  .question-input::placeholder { color: var(--muted); opacity: 0.6; }
+  .question-input:focus { border-color: rgba(201,168,76,0.5); }
+  .char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), #A87830);
+    border: none;
+    border-radius: 50px;
+    padding: 14px 40px;
+    color: #0D0B1E;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+    margin-top: 8px;
+    width: 100%;
+    max-width: 280px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(201,168,76,0.45);
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    border-radius: 50px;
+    padding: 11px 28px;
+    color: var(--muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+  }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--star); }
+
+  /* ── DRAW MODE SELECTION ── */
+  .draw-mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+    margin: 8px 0 24px;
+  }
+  .draw-mode-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .draw-mode-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .draw-mode-btn:hover::before { opacity: 1; }
+  .draw-mode-btn:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(201,168,76,0.18);
+  }
+  .draw-mode-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .draw-mode-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--star);
+    margin-bottom: 6px;
+  }
+  .draw-mode-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ── MANUAL PICK SCREEN ── */
+  .manual-instructions {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .manual-instructions strong { color: var(--gold); font-weight: 400; }
+
+  .pick-progress {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .pick-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .pick-dot.filled {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0D0B1E;
+    font-weight: 500;
+  }
+  .pick-dot.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 10px rgba(201,168,76,0.3);
+  }
+
+  .card-spread {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 440px) {
+    .card-spread { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  }
+
+  .spread-card {
+    aspect-ratio: 2/3;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #1f1b3a, #0f0d22);
+    border: 1px solid rgba(201,168,76,0.18);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .spread-card::before {
+    content: '⬡';
+    font-size: 10px;
+    color: rgba(201,168,76,0.25);
+  }
+  .spread-card:hover:not(.picked):not(.disabled) {
+    border-color: var(--gold);
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(201,168,76,0.25);
+    background: linear-gradient(145deg, #2a2450, #18143a);
+    z-index: 2;
+  }
+  .spread-card.picked {
+    background: linear-gradient(145deg, var(--gold), #A87830);
+    border-color: var(--gold-light);
+    cursor: default;
+    transform: none;
+  }
+  .spread-card.picked::before { content: '✦'; color: #0D0B1E; font-size: 13px; }
+  .spread-card.disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Reversed toggle for manual pick */
+  .reversed-panel {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .reversed-panel.visible { display: block; }
+  .reversed-panel-title {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .reversed-panel-title strong { color: var(--star); }
+  .orientation-choice {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .orientation-btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .orientation-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .orientation-btn.selected-upright {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .orientation-btn.selected-reversed {
+    background: rgba(139,90,122,0.15);
+    border-color: var(--rose-light);
+    color: var(--rose-light);
+  }
+
+  /* ── SHUFFLE SCREEN ── */
+  .shuffle-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 20px 0;
+    width: 100%;
+  }
+  .card-deck {
+    position: relative;
+    width: 120px;
+    height: 200px;
+    cursor: pointer;
+    margin: 16px 0;
+  }
+  .deck-card {
+    position: absolute;
+    width: 120px;
+    height: 200px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #1f1b3a, #0f0d22);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    transition: all 0.4s ease;
+  }
+  .deck-card:nth-child(1) { transform: rotate(-6deg) translate(-6px, 4px); }
+  .deck-card:nth-child(2) { transform: rotate(-2deg) translate(-2px, 2px); }
+  .deck-card:nth-child(3) { transform: rotate(2deg); }
+
+  .deck-pattern {
+    width: 80px;
+    height: 120px;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    opacity: 0.6;
+  }
+
+  .shuffle-text {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .shuffle-text strong { color: var(--gold); font-weight: 400; }
+
+  /* shuffling animation */
+  @keyframes shuffle1 { 0%,100%{transform:rotate(-6deg) translate(-6px,4px)} 50%{transform:rotate(8deg) translate(20px,-8px)} }
+  @keyframes shuffle2 { 0%,100%{transform:rotate(-2deg) translate(-2px,2px)} 50%{transform:rotate(-8deg) translate(-20px,8px)} }
+  @keyframes shuffle3 { 0%,100%{transform:rotate(2deg)} 50%{transform:rotate(4deg) translate(10px,-12px)} }
+  .deck-card.shuffling:nth-child(1) { animation: shuffle1 0.5s ease infinite; }
+  .deck-card.shuffling:nth-child(2) { animation: shuffle2 0.5s ease infinite; }
+  .deck-card.shuffling:nth-child(3) { animation: shuffle3 0.5s ease infinite; }
+
+  /* ── READING SCREEN ── */
+  .reading-topic-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 50px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+
+  .cards-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+    margin: 8px 0 24px;
+    flex-wrap: wrap;
+  }
+
+  .tarot-card {
+    flex: 1;
+    min-width: 90px;
+    max-width: 140px;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 12px 8px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: cardReveal 0.7s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .tarot-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .tarot-card:nth-child(2) { animation-delay: 0.3s; }
+  .tarot-card:nth-child(3) { animation-delay: 0.6s; }
+
+  @keyframes cardReveal {
+    from { opacity: 0; transform: scale(0.85) rotateY(30deg); filter: blur(8px); }
+    to   { opacity: 1; transform: scale(1) rotateY(0); filter: blur(0); }
+  }
+
+  .card-position-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .card-art {
+    width: 70px;
+    height: 110px;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #251f45, #160f2e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border: 1px solid rgba(201,168,76,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .card-art::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(201,168,76,0.1), transparent 70%);
+  }
+  .card-art.reversed { transform: rotate(180deg); }
+
+  .card-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--star);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .card-orientation {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 50px;
+    letter-spacing: 0.1em;
+  }
+  .card-orientation.upright {
+    background: rgba(201,168,76,0.15);
+    color: var(--gold);
+  }
+  .card-orientation.reversed {
+    background: rgba(139,90,122,0.2);
+    color: var(--rose-light);
+  }
+
+  /* ── AI READING AREA ── */
+  .reading-box {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .reading-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.4), transparent);
+  }
+
+  .reading-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0;
+  }
+  .orb {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--muted); letter-spacing: 0.1em; }
+
+  .reading-content { display: none; }
+  .reading-content.visible { display: block; }
+
+  .individual-reading {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+  .individual-reading:last-of-type { border-bottom: none; margin-bottom: 0; }
+
+  .reading-card-label {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .reading-card-name {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--star);
+    margin-bottom: 8px;
+  }
+  .reading-text {
+    font-size: 14px;
+    color: #C8C2DC;
+    line-height: 1.85;
+  }
+
+  .overall-reading {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+  }
+  .overall-title {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    margin-bottom: 10px;
+  }
+  .overall-text {
+    font-size: 14px;
+    color: #C8C2DC;
+    line-height: 1.9;
+  }
+
+  /* YES/NO special */
+  .yesno-verdict {
+    text-align: center;
+    padding: 16px 0;
+    margin-bottom: 16px;
+  }
+  .verdict-word {
+    font-family: 'Cinzel', serif;
+    font-size: 42px;
+    letter-spacing: 0.2em;
+  }
+  .verdict-word.yes { color: var(--gold); text-shadow: 0 0 32px rgba(201,168,76,0.5); }
+  .verdict-word.no  { color: var(--rose-light); text-shadow: 0 0 32px rgba(139,90,122,0.5); }
+
+  /* ── ACTIONS ── */
+  .action-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .btn-action {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    color: var(--muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-action:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-action.primary-action {
+    background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(139,90,122,0.1));
+    border-color: rgba(201,168,76,0.3);
+    color: var(--star);
+  }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(152,144,184,0.5);
+    padding: 0 20px 24px;
+    line-height: 1.6;
+  }
+
+  /* ── ERROR ── */
+  .error-box {
+    background: rgba(139,90,122,0.1);
+    border: 1px solid rgba(139,90,122,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--rose-light);
+    width: 100%;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--card-bg);
+    border: 1px solid var(--gold);
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-size: 13px;
+    color: var(--gold);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 380px) {
+    .cards-row { gap: 8px; }
+    .tarot-card { min-width: 80px; padding: 10px 6px 12px; }
+    .card-art { width: 60px; height: 95px; font-size: 28px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stars-canvas"></canvas>
+
+<div class="app">
+
+  <header>
+    <div class="logo">✦ 星語塔羅 ✦</div>
+    <div class="logo-sub">Daily Tarot · Personal Oracle</div>
+  </header>
+
+  <!-- SCREEN 1: THEME SELECTION -->
+  <div class="screen active" id="screen-theme">
+    <p class="section-title">選擇今日主題</p>
+    <p class="section-desc">宇宙的訊息已在等待<br>告訴我，你心中的問題屬於哪個領域</p>
+
+    <div class="theme-grid">
+      <button class="theme-btn" data-theme="career" onclick="selectTheme(this)">
+        <span class="theme-icon">🏛</span>
+        <div class="theme-name">事業 · 學業</div>
+        <div class="theme-hint">職涯方向、面試、升學</div>
+      </button>
+      <button class="theme-btn" data-theme="love" onclick="selectTheme(this)">
+        <span class="theme-icon">🌹</span>
+        <div class="theme-name">感情</div>
+        <div class="theme-hint">戀愛、關係、心意</div>
+      </button>
+      <button class="theme-btn" data-theme="yesno" onclick="selectTheme(this)">
+        <span class="theme-icon">⚖️</span>
+        <div class="theme-name">YES or NO</div>
+        <div class="theme-hint">直接給你傾向答案</div>
+      </button>
+      <button class="theme-btn" data-theme="daily" onclick="selectTheme(this)">
+        <span class="theme-icon">🌙</span>
+        <div class="theme-name">每日運勢</div>
+        <div class="theme-hint">今日宇宙訊息</div>
+      </button>
+      <button class="theme-btn" data-theme="general" onclick="selectTheme(this)">
+        <span class="theme-icon">✨</span>
+        <div class="theme-name">自由提問</div>
+        <div class="theme-hint">任何在心中的困惑</div>
+      </button>
+    </div>
+
+    <button class="btn-primary" id="btn-to-question" onclick="goToQuestion()" disabled style="opacity:0.4;cursor:not-allowed;margin-top:24px;">
+      繼續 →
+    </button>
+  </div>
+
+  <!-- SCREEN 2: QUESTION INPUT -->
+  <div class="screen" id="screen-question">
+    <p class="section-title" id="q-title">輸入你的問題</p>
+    <p class="section-desc" id="q-desc">把心裡的問題寫下來，或直接進入抽牌</p>
+
+    <div class="question-wrap">
+      <label class="question-label" for="q-input">你想問的問題（選填，最多 100 字）</label>
+      <textarea class="question-input" id="q-input" rows="3"
+        placeholder="把你心裡的困惑說出來……"
+        maxlength="100"
+        oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="char-num">0</span> / 100</div>
+    </div>
+
+    <button class="btn-primary" onclick="goToShuffle()">開始洗牌 →</button>
+    <button class="btn-secondary" onclick="goBack('screen-theme')">← 返回</button>
+  </div>
+
+  <!-- SCREEN 2.5: DRAW MODE SELECTION -->
+  <div class="screen" id="screen-drawmode">
+    <p class="section-title">選擇抽牌方式</p>
+    <p class="section-desc">你偏好讓命運自動為你選牌<br>還是親手從牌堆中挑選？</p>
+
+    <div class="draw-mode-grid">
+      <button class="draw-mode-btn" onclick="selectDrawMode('system')">
+        <span class="draw-mode-icon">🔮</span>
+        <div class="draw-mode-name">系統抽牌</div>
+        <div class="draw-mode-desc">洗牌後由命運<br>為你選出牌卡</div>
+      </button>
+      <button class="draw-mode-btn" onclick="selectDrawMode('manual')">
+        <span class="draw-mode-icon">🖐</span>
+        <div class="draw-mode-name">自己抽牌</div>
+        <div class="draw-mode-desc">從整副牌中<br>憑直覺親手挑選</div>
+      </button>
+    </div>
+
+    <button class="btn-secondary" onclick="goBack('screen-question')">← 返回</button>
+  </div>
+
+  <!-- SCREEN 2.8: MANUAL CARD PICK -->
+  <div class="screen" id="screen-manual">
+    <p class="section-title">親手抽牌</p>
+    <div class="manual-instructions">
+      靜下心，憑直覺點選牌卡<br>
+      <strong id="manual-prompt-text">請選擇第 1 張牌</strong>
+    </div>
+
+    <div class="pick-progress" id="pick-progress"></div>
+
+    <div class="reversed-panel" id="reversed-panel">
+      <div class="reversed-panel-title">這張牌的方向？<br><strong id="reversed-card-name"></strong></div>
+      <div class="orientation-choice">
+        <button class="orientation-btn" id="btn-upright" onclick="confirmOrientation(false)">⬆ 正位</button>
+        <button class="orientation-btn" id="btn-reversed" onclick="confirmOrientation(true)">⬇ 逆位</button>
+      </div>
+    </div>
+
+    <div class="card-spread" id="card-spread"></div>
+
+    <button class="btn-secondary" onclick="goBack('screen-drawmode')">← 返回</button>
+  </div>
+
+  <!-- SCREEN 3: SHUFFLE -->
+  <div class="screen" id="screen-shuffle">
+    <div class="shuffle-wrap">
+      <p class="section-title">凝心洗牌</p>
+      <p class="shuffle-text">
+        深呼吸，將你的問題放在心中<br>
+        <strong>點擊牌組</strong>，當你準備好時
+      </p>
+
+      <div class="card-deck" id="card-deck" onclick="startDraw()">
+        <div class="deck-card"><div class="deck-pattern">⬡</div></div>
+        <div class="deck-card"><div class="deck-pattern">⬡</div></div>
+        <div class="deck-card"><div class="deck-pattern">⬡</div></div>
+      </div>
+
+      <p class="shuffle-text" id="shuffle-status">靜下心，輕觸牌組</p>
+    </div>
+    <button class="btn-secondary" onclick="goBack('screen-question')">← 返回</button>
+  </div>
+
+  <!-- SCREEN 4: READING -->
+  <div class="screen" id="screen-reading">
+    <div class="reading-topic-badge" id="reading-badge">✦ 事業 · 學業</div>
+
+    <div class="cards-row" id="cards-row"></div>
+
+    <div class="reading-box">
+      <div class="reading-loading" id="reading-loading">
+        <div class="orb"></div>
+        <p class="loading-text">星語傳達中，請稍候……</p>
+      </div>
+      <div class="reading-content" id="reading-content"></div>
+    </div>
+
+    <div class="action-row" id="action-row" style="display:none">
+      <button class="btn-action primary-action" onclick="resetAll()">🔄 重新占卜</button>
+      <button class="btn-action" onclick="copyReading()">📋 複製解讀文字</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div class="disclaimer">本工具僅供娛樂與自我反思，不構成任何醫療、法律或財務建議。</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STARFIELD ──
+const canvas = document.getElementById('stars-canvas');
+const ctx = canvas.getContext('2d');
+let stars = [];
+
+function initStars() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.4 + 0.3,
+    a: Math.random(),
+    speed: Math.random() * 0.008 + 0.002,
+    phase: Math.random() * Math.PI * 2
+  }));
+}
+
+function drawStars(t) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  stars.forEach(s => {
+    const alpha = 0.3 + 0.5 * Math.sin(t * s.speed + s.phase);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(232,228,240,${alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+initStars();
+window.addEventListener('resize', initStars);
+requestAnimationFrame(drawStars);
+
+// ── STATE ──
+let selectedTheme = null;
+let drawnCards = [];
+
+const THEMES = {
+  career: { label: '🏛 事業 · 學業', placeholder: '例：這份工作適合我嗎？我今天面試會順利嗎？', layout: ['過去', '現在', '未來'] },
+  love:   { label: '🌹 感情', placeholder: '例：我們之間有未來嗎？他/她對我的心意如何？', layout: ['過去', '現在', '未來'] },
+  yesno:  { label: '⚖️ YES or NO', placeholder: '例：我應該接受這個合作機會嗎？', layout: null },
+  daily:  { label: '🌙 每日運勢', placeholder: null, layout: ['身心狀態', '今日機會', '建議心態'] },
+  general:{ label: '✨ 自由提問', placeholder: '把心中的困惑寫下來……', layout: ['情況', '行動', '結果'] }
+};
+
+// 78 張萊德偉特塔羅牌
+const TAROT_DECK = [
+  {name:'愚者', emoji:'🌟'},{name:'魔術師', emoji:'🪄'},{name:'女祭司', emoji:'🌙'},
+  {name:'皇后', emoji:'🌸'},{name:'皇帝', emoji:'👑'},{name:'教皇', emoji:'📿'},
+  {name:'戀人', emoji:'💞'},{name:'戰車', emoji:'🏆'},{name:'力量', emoji:'🦁'},
+  {name:'隱者', emoji:'🕯️'},{name:'命運之輪', emoji:'☯️'},{name:'正義', emoji:'⚖️'},
+  {name:'倒吊人', emoji:'🔮'},{name:'死神', emoji:'🦋'},{name:'節制', emoji:'💧'},
+  {name:'惡魔', emoji:'⛓️'},{name:'高塔', emoji:'⚡'},{name:'星星', emoji:'⭐'},
+  {name:'月亮', emoji:'🌕'},{name:'太陽', emoji:'☀️'},{name:'審判', emoji:'🎺'},
+  {name:'世界', emoji:'🌍'},
+  // 小阿爾克那（簡化為代表牌）
+  {name:'權杖一', emoji:'🔥'},{name:'權杖二', emoji:'🔥'},{name:'權杖三', emoji:'🔥'},
+  {name:'權杖四', emoji:'🔥'},{name:'權杖五', emoji:'🔥'},{name:'權杖六', emoji:'🔥'},
+  {name:'權杖七', emoji:'🔥'},{name:'權杖八', emoji:'🔥'},{name:'權杖九', emoji:'🔥'},
+  {name:'權杖十', emoji:'🔥'},{name:'權杖侍者', emoji:'🔥'},{name:'權杖騎士', emoji:'🔥'},
+  {name:'權杖皇后', emoji:'🔥'},{name:'權杖國王', emoji:'🔥'},
+  {name:'聖杯一', emoji:'💧'},{name:'聖杯二', emoji:'💧'},{name:'聖杯三', emoji:'💧'},
+  {name:'聖杯四', emoji:'💧'},{name:'聖杯五', emoji:'💧'},{name:'聖杯六', emoji:'💧'},
+  {name:'聖杯七', emoji:'💧'},{name:'聖杯八', emoji:'💧'},{name:'聖杯九', emoji:'💧'},
+  {name:'聖杯十', emoji:'💧'},{name:'聖杯侍者', emoji:'💧'},{name:'聖杯騎士', emoji:'💧'},
+  {name:'聖杯皇后', emoji:'💧'},{name:'聖杯國王', emoji:'💧'},
+  {name:'寶劍一', emoji:'💨'},{name:'寶劍二', emoji:'💨'},{name:'寶劍三', emoji:'💨'},
+  {name:'寶劍四', emoji:'💨'},{name:'寶劍五', emoji:'💨'},{name:'寶劍六', emoji:'💨'},
+  {name:'寶劍七', emoji:'💨'},{name:'寶劍八', emoji:'💨'},{name:'寶劍九', emoji:'💨'},
+  {name:'寶劍十', emoji:'💨'},{name:'寶劍侍者', emoji:'💨'},{name:'寶劍騎士', emoji:'💨'},
+  {name:'寶劍皇后', emoji:'💨'},{name:'寶劍國王', emoji:'💨'},
+  {name:'五芒星一', emoji:'🌿'},{name:'五芒星二', emoji:'🌿'},{name:'五芒星三', emoji:'🌿'},
+  {name:'五芒星四', emoji:'🌿'},{name:'五芒星五', emoji:'🌿'},{name:'五芒星六', emoji:'🌿'},
+  {name:'五芒星七', emoji:'🌿'},{name:'五芒星八', emoji:'🌿'},{name:'五芒星九', emoji:'🌿'},
+  {name:'五芒星十', emoji:'🌿'},{name:'五芒星侍者', emoji:'🌿'},{name:'五芒星騎士', emoji:'🌿'},
+  {name:'五芒星皇后', emoji:'🌿'},{name:'五芒星國王', emoji:'🌿'}
+];
+
+function drawRandomCards(n) {
+  const deck = [...TAROT_DECK].sort(() => Math.random() - 0.5);
+  return deck.slice(0, n).map(c => ({
+    ...c,
+    reversed: Math.random() > 0.5
+  }));
+}
+
+// ── NAVIGATION ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goBack(targetId) { showScreen(targetId); }
+
+function selectTheme(btn) {
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedTheme = btn.dataset.theme;
+  const nextBtn = document.getElementById('btn-to-question');
+  nextBtn.disabled = false;
+  nextBtn.style.opacity = '1';
+  nextBtn.style.cursor = 'pointer';
+}
+
+function goToQuestion() {
+  if (!selectedTheme) return;
+  const theme = THEMES[selectedTheme];
+
+  if (selectedTheme === 'daily') {
+    // Skip question for daily
+    showScreen('screen-shuffle');
+    return;
+  }
+
+  document.getElementById('q-title').textContent = {
+    career:'說說你的疑惑', love:'說說你的感情困惑', yesno:'你的問題是？',
+    general:'輸入你的問題'
+  }[selectedTheme] || '輸入你的問題';
+
+  const placeholder = theme.placeholder || '把心中的困惑寫下來……';
+  document.getElementById('q-input').placeholder = placeholder;
+  document.getElementById('q-input').value = '';
+  document.getElementById('char-num').textContent = '0';
+
+  showScreen('screen-question');
+}
+
+function updateCharCount() {
+  const val = document.getElementById('q-input').value.length;
+  document.getElementById('char-num').textContent = val;
+}
+
+function goToShuffle() { showScreen('screen-drawmode'); }
+
+// ── DRAW MODE ──
+let drawMode = null; // 'system' | 'manual'
+let manualPicked = [];       // { cardIndex, reversed }
+let pendingPickIndex = null; // which spread card was just tapped
+let totalCardsToPick = 1;
+
+function selectDrawMode(mode) {
+  drawMode = mode;
+  if (mode === 'system') {
+    showScreen('screen-shuffle');
+  } else {
+    initManualPick();
+    showScreen('screen-manual');
+  }
+}
+
+function initManualPick() {
+  manualPicked = [];
+  pendingPickIndex = null;
+  const isYesNo = selectedTheme === 'yesno';
+  totalCardsToPick = isYesNo ? 1 : 3;
+
+  // progress dots
+  const prog = document.getElementById('pick-progress');
+  prog.innerHTML = '';
+  for (let i = 0; i < totalCardsToPick; i++) {
+    const d = document.createElement('div');
+    d.className = 'pick-dot' + (i === 0 ? ' active' : '');
+    d.textContent = i + 1;
+    prog.appendChild(d);
+  }
+
+  updateManualPrompt();
+  document.getElementById('reversed-panel').classList.remove('visible');
+
+  // Build spread — shuffle indices for display variety
+  const spread = document.getElementById('card-spread');
+  spread.innerHTML = '';
+  const indices = Array.from({length: 78}, (_, i) => i).sort(() => Math.random() - 0.5);
+
+  indices.forEach((deckIdx, i) => {
+    const c = document.createElement('div');
+    c.className = 'spread-card';
+    c.dataset.deckIdx = deckIdx;
+    c.onclick = () => onSpreadCardClick(c, deckIdx);
+    spread.appendChild(c);
+  });
+}
+
+function updateManualPrompt() {
+  const n = manualPicked.length + 1;
+  document.getElementById('manual-prompt-text').textContent =
+    manualPicked.length < totalCardsToPick
+      ? `請選擇第 ${n} 張牌`
+      : '✦ 所有牌已選定';
+}
+
+function onSpreadCardClick(el, deckIdx) {
+  // If already picked or disabled or waiting for orientation, ignore
+  if (el.classList.contains('picked') || el.classList.contains('disabled')) return;
+  if (pendingPickIndex !== null) return; // waiting for orientation
+
+  // Mark as pending
+  pendingPickIndex = deckIdx;
+  el.classList.add('picked');
+
+  // Show reversed-panel
+  const card = TAROT_DECK[deckIdx];
+  document.getElementById('reversed-card-name').textContent = card.name;
+  document.getElementById('btn-upright').className = 'orientation-btn';
+  document.getElementById('btn-reversed').className = 'orientation-btn';
+  document.getElementById('reversed-panel').classList.add('visible');
+
+  // Scroll to panel
+  document.getElementById('reversed-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function confirmOrientation(isReversed) {
+  if (pendingPickIndex === null) return;
+
+  manualPicked.push({ ...TAROT_DECK[pendingPickIndex], reversed: isReversed });
+  pendingPickIndex = null;
+
+  // Update progress dots
+  const dots = document.querySelectorAll('.pick-dot');
+  manualPicked.forEach((_, i) => {
+    dots[i].classList.remove('active');
+    dots[i].classList.add('filled');
+    dots[i].textContent = '✓';
+  });
+  if (manualPicked.length < totalCardsToPick) {
+    dots[manualPicked.length].classList.add('active');
+  }
+
+  document.getElementById('reversed-panel').classList.remove('visible');
+  updateManualPrompt();
+
+  if (manualPicked.length >= totalCardsToPick) {
+    // Disable remaining cards
+    document.querySelectorAll('.spread-card:not(.picked)').forEach(c => c.classList.add('disabled'));
+    // Short delay then reveal
+    setTimeout(() => {
+      drawnCards = manualPicked;
+      buildReadingScreen();
+    }, 700);
+  }
+}
+
+function resetAll() {
+  selectedTheme = null;
+  drawMode = null;
+  drawnCards = [];
+  manualPicked = [];
+  pendingPickIndex = null;
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+  const nextBtn = document.getElementById('btn-to-question');
+  nextBtn.disabled = true;
+  nextBtn.style.opacity = '0.4';
+  nextBtn.style.cursor = 'not-allowed';
+  document.getElementById('q-input').value = '';
+  document.getElementById('char-num').textContent = '0';
+
+  // Reset deck cards
+  document.querySelectorAll('.deck-card').forEach(c => c.classList.remove('shuffling'));
+  document.getElementById('shuffle-status').textContent = '靜下心，輕觸牌組';
+
+  showScreen('screen-theme');
+}
+
+// ── SHUFFLE & DRAW ──
+let isShuffling = false;
+function startDraw() {
+  if (isShuffling) return;
+  isShuffling = true;
+
+  const deckCards = document.querySelectorAll('.deck-card');
+  deckCards.forEach(c => c.classList.add('shuffling'));
+  document.getElementById('shuffle-status').textContent = '牌組正在洗牌……';
+
+  setTimeout(() => {
+    deckCards.forEach(c => c.classList.remove('shuffling'));
+    document.getElementById('shuffle-status').textContent = '✦ 命運之牌已選定 ✦';
+
+    setTimeout(() => {
+      isShuffling = false;
+      revealCards();
+    }, 600);
+  }, 1800);
+}
+
+function revealCards() {
+  const isYesNo = selectedTheme === 'yesno';
+  const cardCount = isYesNo ? 1 : 3;
+  drawnCards = drawRandomCards(cardCount);
+  buildReadingScreen();
+}
+
+function buildReadingScreen() {
+  const theme = THEMES[selectedTheme];
+  const isYesNo = selectedTheme === 'yesno';
+  const positions = isYesNo ? ['解答'] : (theme.layout || ['過去','現在','未來']);
+
+  // Build cards row
+  const row = document.getElementById('cards-row');
+  row.innerHTML = '';
+
+  drawnCards.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = 'tarot-card';
+    div.innerHTML = `
+      <div class="card-position-label">${positions[i]}</div>
+      <div class="card-art${card.reversed ? ' reversed' : ''}">${card.emoji}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-orientation ${card.reversed ? 'reversed' : 'upright'}">${card.reversed ? '逆位' : '正位'}</div>
+    `;
+    row.appendChild(div);
+  });
+
+  // Badge
+  document.getElementById('reading-badge').textContent = `✦ ${theme.label}`;
+
+  // Reset reading area
+  document.getElementById('reading-loading').style.display = 'flex';
+  document.getElementById('reading-content').className = 'reading-content';
+  document.getElementById('reading-content').innerHTML = '';
+  document.getElementById('action-row').style.display = 'none';
+
+  showScreen('screen-reading');
+  fetchReading();
+}
+
+// ── CLAUDE API ──
+async function fetchReading() {
+  const theme = THEMES[selectedTheme];
+  const question = document.getElementById('q-input').value.trim();
+  const isYesNo = selectedTheme === 'yesno';
+  const positions = isYesNo ? ['解答'] : (theme.layout || ['過去','現在','未來']);
+
+  const cardsDesc = drawnCards.map((c, i) =>
+    `第${i+1}張（位置：${positions[i]}）：${c.name}（${c.reversed ? '逆位' : '正位'}）`
+  ).join('\n');
+
+  const themePrompts = {
+    career: '事業與學業方向，包含職涯選擇、工作狀況、面試、升學等議題',
+    love: '感情與人際關係，包含戀愛、曖昧、伴侶關係等議題',
+    yesno: 'YES or NO 直接決策，給出明確傾向',
+    daily: '今日整體運勢與心靈狀態，提供一日指引',
+    general: '自由開放的人生指引'
+  };
+
+  const systemPrompt = `你是一位溫暖、直覺、有洞察力的塔羅解讀師。
+你的解讀風格：溫暖而不神棍，鼓勵自我探索，給出具體可行的方向感，而非預言命運。
+語調：像一位懂你的朋友，說話簡潔有力，不繞圈子。
+禁止出現：「我是AI」、「我無法確定」、「作為語言模型」等語句。
+請用繁體中文回應。`;
+
+  let userPrompt = '';
+  if (isYesNo) {
+    userPrompt = `抽到的牌：${drawnCards[0].name}（${drawnCards[0].reversed ? '逆位' : '正位'}）
+用戶問題：${question || '（未填寫具體問題）'}
+
+主題：YES or NO 決策
+
+請先給出明確判斷（YES 或 NO 的傾向），然後用 2-3 句話解釋這張牌帶來的訊息與建議。
+整體解讀約 100-150 字。
+
+回應格式（JSON）：
+{
+  "verdict": "YES" 或 "NO",
+  "cardReading": "這張牌的解讀文字",
+  "advice": "給用戶的行動建議（1-2句）"
+}`;
+  } else {
+    userPrompt = `占卜主題：${themePrompts[selectedTheme]}
+用戶問題：${question || '（無特定問題，請給出此主題的整體引導）'}
+
+抽到的三張牌：
+${cardsDesc}
+
+請針對每張牌給出個別解讀（各2-3句），並提供整體綜合解讀（4-5句，含行動建議）。
+語氣溫暖、直覺、實用，讓用戶感覺被理解。
+
+回應格式（JSON）：
+{
+  "cardReadings": [
+    {"position": "${positions[0]}", "cardName": "${drawnCards[0]?.name}", "reading": "解讀文字"},
+    {"position": "${positions[1]}", "cardName": "${drawnCards[1]?.name}", "reading": "解讀文字"},
+    {"position": "${positions[2]}", "cardName": "${drawnCards[2]?.name}", "reading": "解讀文字"}
+  ],
+  "overallReading": "整體綜合解讀文字"
+}`;
+  }
+
+  try {
+    const resp = await fetch('/api/tarot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Parse error');
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    renderReading(parsed, isYesNo, positions);
+  } catch (e) {
+    document.getElementById('reading-loading').style.display = 'none';
+    document.getElementById('reading-content').innerHTML = `
+      <div class="error-box">
+        星語傳達中出現干擾，請稍後重試。<br>
+        <button class="btn-secondary" style="margin-top:12px" onclick="fetchReading()">重試</button>
+      </div>`;
+    document.getElementById('reading-content').classList.add('visible');
+  }
+}
+
+function renderReading(data, isYesNo, positions) {
+  document.getElementById('reading-loading').style.display = 'none';
+  const content = document.getElementById('reading-content');
+  content.innerHTML = '';
+
+  if (isYesNo) {
+    const isYes = data.verdict?.toUpperCase() === 'YES';
+    content.innerHTML = `
+      <div class="yesno-verdict">
+        <div class="verdict-word ${isYes ? 'yes' : 'no'}">${isYes ? 'YES' : 'NO'}</div>
+      </div>
+      <div class="individual-reading">
+        <div class="reading-card-label">牌義解讀</div>
+        <div class="reading-card-name">${drawnCards[0].name} · ${drawnCards[0].reversed ? '逆位' : '正位'}</div>
+        <div class="reading-text">${data.cardReading}</div>
+      </div>
+      <div class="overall-reading">
+        <div class="overall-title">✦ 建議</div>
+        <div class="overall-text">${data.advice}</div>
+      </div>`;
+  } else {
+    let html = '';
+    (data.cardReadings || []).forEach((cr, i) => {
+      html += `
+        <div class="individual-reading">
+          <div class="reading-card-label">${cr.position}</div>
+          <div class="reading-card-name">${drawnCards[i]?.name} · ${drawnCards[i]?.reversed ? '逆位' : '正位'}</div>
+          <div class="reading-text">${cr.reading}</div>
+        </div>`;
+    });
+    html += `
+      <div class="overall-reading">
+        <div class="overall-title">✦ 整體解讀</div>
+        <div class="overall-text">${data.overallReading}</div>
+      </div>`;
+    content.innerHTML = html;
+  }
+
+  content.classList.add('visible');
+  document.getElementById('action-row').style.display = 'flex';
+}
+
+function copyReading() {
+  const content = document.getElementById('reading-content');
+  const text = content.innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('已複製解讀文字 ✓'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
