@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>每日塔羅 · Daily Tarot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── SCREEN 1: Theme Selection ── -->
+    <section id="screen-theme" class="screen active">
+      <div class="stars" aria-hidden="true"></div>
+      <header class="hero">
+        <div class="moon-icon" aria-hidden="true">🌙</div>
+        <h1 class="logo">每日塔羅</h1>
+        <p class="tagline">傾聽內心，洞見當下</p>
+      </header>
+      <div class="theme-grid" role="group" aria-label="選擇占卜主題">
+        <button class="theme-btn" data-theme="career" aria-label="事業學業占卜">
+          <span class="theme-icon">⚡</span>
+          <span class="theme-name">事業 · 學業</span>
+          <span class="theme-desc">職涯發展・學習方向</span>
+        </button>
+        <button class="theme-btn" data-theme="romance" aria-label="感情占卜">
+          <span class="theme-icon">🌹</span>
+          <span class="theme-name">感情</span>
+          <span class="theme-desc">關係・愛情・緣分</span>
+        </button>
+        <button class="theme-btn" data-theme="yesno" aria-label="YES or NO 占卜">
+          <span class="theme-icon">✨</span>
+          <span class="theme-name">YES or NO</span>
+          <span class="theme-desc">快速獲得答案傾向</span>
+        </button>
+        <button class="theme-btn" data-theme="daily" aria-label="每日運勢占卜">
+          <span class="theme-icon">🌟</span>
+          <span class="theme-name">每日運勢</span>
+          <span class="theme-desc">今日宇宙能量訊息</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 2: Question Input ── -->
+    <section id="screen-question" class="screen">
+      <button class="back-btn" id="back-to-theme" aria-label="返回主題選擇">← 返回</button>
+      <div class="question-container">
+        <div class="theme-badge" id="selected-theme-badge"></div>
+        <h2 class="question-title">你想詢問什麼？</h2>
+        <p class="question-subtitle">可以不填——塔羅也能讀懂你此刻的心情</p>
+        <div class="input-wrapper">
+          <textarea
+            id="question-input"
+            maxlength="100"
+            placeholder="例：這份工作適合我嗎？"
+            aria-label="輸入你的問題"
+            rows="3"
+          ></textarea>
+          <div class="char-count"><span id="char-count">0</span>/100</div>
+        </div>
+        <button class="primary-btn" id="start-draw-btn">開始抽牌</button>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 3: Shuffle & Draw ── -->
+    <section id="screen-draw" class="screen">
+      <div class="draw-container">
+        <p class="draw-instruction" id="draw-instruction">正在洗牌中，請靜心冥想你的問題…</p>
+        <div class="deck-area" id="deck-area" aria-label="牌堆">
+          <div class="deck-stack" id="deck-stack">
+            <div class="card-back" aria-hidden="true"></div>
+            <div class="card-back" aria-hidden="true"></div>
+            <div class="card-back" aria-hidden="true"></div>
+            <div class="card-back shuffle-top" id="top-card" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="drawn-cards" id="drawn-cards" aria-live="polite" aria-label="已抽出的牌"></div>
+        <button class="primary-btn hidden" id="reveal-btn">翻開這張牌</button>
+        <button class="primary-btn hidden" id="get-reading-btn">獲取 AI 解讀</button>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 4: Reading Result ── -->
+    <section id="screen-result" class="screen">
+      <button class="back-btn" id="back-to-draw" aria-label="返回">← 重新洗牌</button>
+      <div class="result-container">
+        <div class="result-cards" id="result-cards" aria-label="占卜結果牌面"></div>
+        <div class="reading-box">
+          <div class="reading-header">
+            <span class="crystal-ball" aria-hidden="true">🔮</span>
+            <h2>塔羅解讀</h2>
+          </div>
+          <div class="reading-content" id="reading-content" aria-live="polite">
+            <div class="reading-loader">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <p>正在解讀牌義…</p>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="action-btn" id="copy-btn" aria-label="複製解讀文字">
+            <span aria-hidden="true">📋</span> 複製解讀
+          </button>
+          <button class="action-btn primary" id="redraw-btn" aria-label="重新占卜">
+            <span aria-hidden="true">🔄</span> 重新占卜
+          </button>
+        </div>
+        <p class="disclaimer">本工具僅供娛樂與自我反思，不構成任何醫療、法律或財務建議。</p>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="tarot-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
